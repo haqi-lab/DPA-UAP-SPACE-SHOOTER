@@ -12,4 +12,4 @@ Space Shooter itu game di mana kita sebagai player menggerakkan pesawat untuk me
 Menyusul....
 
 ## Tujuan Project
-Project ini dibuat untuk memenuhi tugas UAP mata kuliah Dasar Pemrograman dan Algoritma.
+Project ini dibuat guna memenuhi tugas UAP mata kuliah Dasar Pemrograman dan Algoritma.
