@@ -1,4 +1,4 @@
-# DPA UAS Space Shooter
+# DPA UAP Space Shooter
 
 # Deskripsi Project
 Space Shooter adalah game sederhana di mana kita sebagai player menggerakkan pesawat untuk menembaki lawan supaya bisa mendapatkan skor.
