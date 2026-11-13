@@ -12,4 +12,4 @@ Space Shooter adalah game sederhana di mana kita sebagai player menggerakkan pes
 Menyusul....
 
 ## Tujuan Project
-Project ini dibuat untuk memenuhi tugas UAS mata kuliah Dasar Pemrograman dan Algoritma.
+Project ini dibuat untuk memenuhi tugas UAP mata kuliah Dasar Pemrograman dan Algoritma.
