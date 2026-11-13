@@ -1,7 +1,7 @@
 # DPA UAP Space Shooter
 
 # Deskripsi Project
-Space Shooter adalah game sederhana di mana kita sebagai player menggerakkan pesawat untuk menembaki lawan supaya bisa mendapatkan skor.
+Space Shooter itu game di mana kita sebagai player menggerakkan pesawat untuk menembaki lawan supaya bisa mendapatkan skor.
 
 ## Anggota Kelompok
 1. Mohammad Bintang Bayhaqi 
