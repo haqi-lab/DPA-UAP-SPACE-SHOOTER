@@ -1,206 +1,108 @@
 #include <ncurses.h>
+#include <algorithm>
 #include <cstdlib>
-#include <unistd.h>
 #include <ctime>
 #include <vector>
-
 using namespace std;
 
-struct Object {
-    int x;
-    int y;
-};
+struct Pos { int x, y; };
 
 int main() {
-    
+    srand(time(nullptr));
+
     initscr();
+    cbreak();
     noecho();
-    curs_set(0);
     keypad(stdscr, TRUE);
-    nodelay(stdscr, TRUE);
+    curs_set(0);
+    timeout(50);
+    start_color();
+    init_pair(1, COLOR_CYAN, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 
-    srand(time(0));
-
-    
-    int maxY, maxX;
-    getmaxyx(stdscr, maxY, maxX);
-
-    
-    if (maxX < 30 || maxY < 15) {
+    int H, W;
+    getmaxyx(stdscr, H, W);
+    if (H < 12 || W < 30) {
         endwin();
-        return 0;
+        puts("Terminal terlalu kecil (minimal 30x12).");
+        return 1;
     }
 
-    /
-    Object player;
-    player.x = maxX / 2;
-    player.y = maxY - 3;
+    bool quit = false;
+    while (!quit) {
+        vector<Pos> bullets, enemies;
+        int px = W / 2, score = 0, lives = 3, frame = 0;
 
-    
-    vector<Object> bullets;
-    vector<Object> enemies;
-
-    
-    int score = 0;
-    bool gameOver = false;
-    bool running = true;
-
-    
-    enemies.push_back({rand() % (maxX - 2) + 1, 3});
-
-    
-    int frame = 0;
-
-    while (running && !gameOver) {
-
-        clear();
-
-        
-        getmaxyx(stdscr, maxY, maxX);
-
-        
-        int key = getch();
-
-        
-
-        if (key == KEY_LEFT && player.x > 1) {
-            player.x--;
-        }
-
-        if (key == KEY_RIGHT && player.x < maxX - 2) {
-            player.x++;
-        }
-
-        
-        if (key == ' ') {
-            bullets.push_back({player.x, player.y - 1});
-        }
-
-        
-        if (key == 'q' || key == 'Q') {
-            running = false;
-            break;
-        }
-
-        
-
-        for (int i = 0; i < (int)bullets.size(); i++) {
-            bullets[i].y--;
-
-            // Menghapus peluru yang keluar layar
-            if (bullets[i].y <= 1) {
-                bullets.erase(bullets.begin() + i);
-                i--;
-            }
-        }
-
-  
-
-        frame++;
-
-        
-        if (frame % 5 == 0) {
-            for (int i = 0; i < (int)enemies.size(); i++) {
-                enemies[i].y++;
-            }
-        }
-
-        
-        if (frame % 20 == 0) {
-            enemies.push_back({
-                rand() % (maxX - 2) + 1,
-                2
-            });
-        }
-
-        
-        for (int i = 0; i < (int)bullets.size(); i++) {
-            for (int j = 0; j < (int)enemies.size(); j++) {
-
-                if (bullets[i].x == enemies[j].x &&
-                    bullets[i].y == enemies[j].y) {
-
-                    score += 10;
-
-                    bullets.erase(bullets.begin() + i);
-                    enemies.erase(enemies.begin() + j);
-
-                    i--;
-                    break;
+        auto checkHits = [&]() {
+            for (size_t b = 0; b < bullets.size();) {
+                bool hit = false;
+                for (size_t e = 0; e < enemies.size(); e++) {
+                    if (bullets[b].x == enemies[e].x && bullets[b].y == enemies[e].y) {
+                        enemies.erase(enemies.begin() + e);
+                        score += 10;
+                        hit = true;
+                        break;
+                    }
                 }
+                if (hit) bullets.erase(bullets.begin() + b);
+                else b++;
             }
+        };
+
+        while (lives > 0 && !quit) {
+            int ch = getch();
+            if (ch == KEY_LEFT || ch == 'a') px--;
+            if (ch == KEY_RIGHT || ch == 'd') px++;
+            if (ch == ' ') bullets.push_back({px, H - 2});
+            if (ch == 'q') quit = true;
+            px = max(1, min(W - 2, px));
+
+            for (auto& b : bullets) b.y--;
+            for (size_t i = 0; i < bullets.size();)
+                if (bullets[i].y < 1) bullets.erase(bullets.begin() + i);
+                else i++;
+            checkHits();
+
+            int interval = max(2, 6 - score / 100);
+            if (frame % interval == 0)
+                for (auto& e : enemies) e.y++;
+            if (frame % 10 == 0) enemies.push_back({rand() % W, 1});
+            checkHits();
+
+            for (size_t i = 0; i < enemies.size();)
+                if (enemies[i].y >= H - 1) { enemies.erase(enemies.begin() + i); lives--; }
+                else i++;
+            frame++;
+
+            erase();
+            attron(COLOR_PAIR(3));
+            mvprintw(0, 0, "Skor: %d  Nyawa: %d  (Q keluar)", score, lives);
+            for (auto& b : bullets) mvaddch(b.y, b.x, '|');
+            attroff(COLOR_PAIR(3));
+            attron(COLOR_PAIR(2));
+            for (auto& e : enemies) mvaddch(e.y, e.x, 'V');
+            attroff(COLOR_PAIR(2));
+            attron(COLOR_PAIR(1));
+            mvprintw(H - 1, px - 1, "/A\\");
+            attroff(COLOR_PAIR(1));
+            refresh();
         }
 
-        
-        for (int i = 0; i < (int)enemies.size(); i++) {
+        if (quit) break;
 
-            if (enemies[i].x == player.x &&
-                enemies[i].y == player.y) {
-
-                gameOver = true;
-            }
-
-            
-            if (enemies[i].y >= player.y) {
-                gameOver = true;
-            }
-        }
-
-        
-        mvprintw(0, 2, "SPACE SHOOTER");
-        mvprintw(0, maxX - 15, "SCORE: %d", score);
-
-        
-        for (int x = 0; x < maxX; x++) {
-            mvaddch(1, x, '-');
-        }
-
-        
-        mvaddch(player.y, player.x, '^');
-
-    
-        for (int i = 0; i < (int)bullets.size(); i++) {
-            mvaddch(bullets[i].y, bullets[i].x, '|');
-        }
-
-        
-        for (int i = 0; i < (int)enemies.size(); i++) {
-            mvaddch(enemies[i].y, enemies[i].x, 'W');
-        }
-
-        mvprintw(maxY - 1, 2,
-                 "LEFT/RIGHT: Move | SPACE: Shoot | Q: Quit");
-
+        timeout(-1);
+        erase();
+        mvprintw(H / 2 - 1, W / 2 - 5, "GAME OVER");
+        mvprintw(H / 2, W / 2 - 8, "Skor akhir: %d", score);
+        mvprintw(H / 2 + 1, W / 2 - 10, "R = main lagi, Q = keluar");
         refresh();
-
-        
-        napms(80);
+        int ch;
+        do { ch = getch(); } while (ch != 'r' && ch != 'q' && ch != ERR);
+        if (ch != 'r') quit = true;
+        timeout(50);
     }
 
-    if (gameOver) {
-        clear();
-
-        mvprintw(maxY / 2 - 1,
-                 maxX / 2 - 5,
-                 "GAME OVER!");
-
-        mvprintw(maxY / 2,
-                 maxX / 2 - 7,
-                 "FINAL SCORE: %d", score);
-
-        mvprintw(maxY / 2 + 2,
-                 maxX / 2 - 11,
-                 "Press any key to exit");
-
-        refresh();
-
-        nodelay(stdscr, FALSE);
-        getch();
-    }
-
-    
     endwin();
-
     return 0;
 }
-
